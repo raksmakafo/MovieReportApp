@@ -1,4 +1,6 @@
+using MovieReportApp0.Data;
 using System;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
