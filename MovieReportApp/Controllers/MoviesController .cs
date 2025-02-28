@@ -1,72 +1,61 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MovieReportApp.Data;
-using MovieReportApp.Models; // Імпорт моделей
+using MovieReportApp.Models;
 
-namespace MovieReportApp.Controllers
+[Route("api/[controller]")]
+[ApiController]
+public class MoviesController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class MoviesController : ControllerBase
+    private readonly AppDbContext _context;
+
+    public MoviesController(AppDbContext context)
     {
-        private readonly AppDbContext _context;
+        _context = context;
+    }
 
-        public MoviesController(AppDbContext context)
-        {
-            _context = context;
-        }
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
+    {
+        return await _context.Movies.ToListAsync();
+    }
 
-        // GET: api/movies (Отримати всі фільми)
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Movie>>> GetMovies()
-        {
-            return await _context.Movie.ToListAsync();
-        }
+    [HttpGet("{id}")]
+    public async Task<ActionResult<Movie>> GetMovie(int id)
+    {
+        var movie = await _context.Movies.FindAsync(id);
+        if (movie == null) return NotFound();
+        return movie;
+    }
 
-        // GET api/movies/5 (Отримати конкретний фільм)
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Movie>> GetMovie(int id)
-        {
-            var movies = await _context.Movie.FindAsync(id);
-            if (movies == null)
-                return NotFound();
-            return movies;
-        }
+    [HttpPost]
+    public async Task<ActionResult<Movie>> CreateMovie(Movie movie)
+    {
+        _context.Movies.Add(movie);
+        await _context.SaveChangesAsync();
+        return CreatedAtAction(nameof(GetMovie), new { id = movie.Id }, movie);
+    }
 
-        // POST api/movies (Створити новий фільм)
-        [HttpPost]
-        public async Task<ActionResult<Movie>> CreateMovie(Movie movies)
-        {
-            _context.Movie.Add(movies);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetMovie), new { id = movies.Id }, movies);
-        }
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateMovie(int id, Movie movie)
+    {
+        if (id != movie.Id) return BadRequest();
 
-        // PUT api/movies/5 (Оновити фільм)
-        [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateMovie(int id, Movie movies)
-        {
-            if (id != movies.Id)
-                return BadRequest();
+        _context.Entry(movie).State = EntityState.Modified;
+        await _context.SaveChangesAsync();
 
-            _context.Entry(movies).State = EntityState.Modified;
-            await _context.SaveChangesAsync();
+        return NoContent();
+    }
 
-            return NoContent();
-        }
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteMovie(int id)
+    {
+        var movie = await _context.Movies.FindAsync(id);
+        if (movie == null) return NotFound();
 
-        // DELETE api/movies/5 (Видалити фільм)
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteMovie(int id)
-        {
-            var movies = await _context.Movie.FindAsync(id);
-            if (movies == null)
-                return NotFound();
+        _context.Movies.Remove(movie);
+        await _context.SaveChangesAsync();
 
-            _context.Movie.Remove(movies);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
-        }
+        return NoContent();
     }
 }
